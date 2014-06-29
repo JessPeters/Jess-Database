@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Jess Database</title>
+
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <link rel="stylesheet" href="css/jatabase.css">
+    <link rel="stylesheet" href="css/ng-tags-input.css">
+</head>
+
+<body ng-app="myApp">
+    <div ng-controller="JobController" class="root">
+        <div class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-form">
+                    <div class="input-group">
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-search"></span>
+                        </span>
+                        <input type="text" class="form-control" ng-model="searchtext">
+                        <span class="input-group-addon">
+                            <a href="#" ng-click="setSearchText('')">
+                                <span class="glyphicon glyphicon-remove"></span>
+                            </a>
+                        </span>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- Usual State -->
+                        <div>
+                            <accordion close-others="false">
+                                <div class="panel" ng-repeat="job in jobs | multiJobFilter:searchtext | orderBy:[activeJobPredicate,numberPredicate]">
+                                    <accordion-group is-open="job.isExpanded" ng-class="{'panel-info':job.activejob}">
+                                        <accordion-heading>
+
+                                            <span>
+                                                <img src="{{job.clientfaviconfilepath}}" class="img-rounded panel-heading-icon">
+                                            </span>
+
+                                            <span ng-click="job.isExpanded=!job.isExpanded">{{job.number}}: {{job.name}}</span>
+                                            <span class="pull-right">
+                                                <span ng-click="openConfirmDeleteModal(job)">
+                                                    <span class="glyphicon glyphicon-remove panelheader-icon"></span>
+                                                </span>
+                                                <span ng-click="editJob(job)" ng-if="!job.isEditing">
+                                                    <span class="glyphicon glyphicon-edit panelheader-icon"></span>
+                                                </span>
+                                                <span ng-click="job.isEditing=false" ng-if="job.isEditing">
+                                                    <span class="glyphicon glyphicon-save panelheader-icon"></span>
+                                                </span>
+                                                <span ng-click="opentarget(job.folder)" href="#">
+                                                    <span class="glyphicon glyphicon-folder-open panelheader-icon"></span>
+                                                </span>
+                                            </span>
+                                        </accordion-heading>
+
+
+                                        <div>
+                                            <div class="row">
+                                                <div class="col-md-12">
+
+                                                </div>
+                                            </div>
+                                            <div ng-if="!job.isEditing">
+                                                <div class="row">
+
+                                                    <div class="col-md-9">
+
+
+                                                        <ul class="list-inline">
+                                                            <li ng-repeat="tag in job.tags">
+                                                                <span href="#" ng-click="setSearchText(tag.text)" class="label-for-tags">{{tag.text}}</span>
+                                                            </li>
+                                                        </ul>
+
+
+
+
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div>
+                                                            <p class="text-right">
+                                                                <strong class="text-muted">from&nbsp;</strong>{{job.startdate | date:'MMM-yy'}}</p>
+                                                            <p ng-if="!job.activejob" class="text-right">
+                                                                <strong class="text-muted">to&nbsp;</strong>{{job.enddate | date:'MMM-yy'}}</p>
+                                                            <p ng-if="job.activejob" class="text-right">
+                                                                <strong class="text-muted">ongoing</strong>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+
+
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-8">
+
+                                                        <label>Parent Job Folder&nbsp;</label>
+                                                        <a ng-click="opentarget(job.folder)" href="#" class="text-info small">{{job.folder}}</a>
+                                                        
+
+
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label for="descriptionfield">Notes:</label>
+                                                            <textarea class="form-control jobdesciption-textarea" rows="5" id="descriptionfield">{{job.description}}</textarea>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                </div>
+                                            </div>
+
+                                            <div ng-if="job.isEditing">
+                                                <div class="form-horizontal">
+                                                    <div class="form-group">
+                                                        <label class="col-sm-2 control-label">Job Number</label>
+                                                        <div class="col-sm-10">
+                                                            <input ng-model="job.number" type="number" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label ng-model="job.name" class="col-sm-2 control-label">Job Name</label>
+                                                        <div class="col-sm-10">
+                                                            <input ng-model="job.name" type="text" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-2 control-label">Job Folder</label>
+                                                        <div class="col-sm-10">
+                                                            <input ng-model="job.folder" type="text" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-2 control-label">Tags</label>
+                                                        <div class="col-sm-10">
+                                                            <tags-input ng-model="job.tags">
+                                                                <auto-complete source="getTagsMatchingQuery($query)" min-length="1"></auto-complete>
+                                                            </tags-input>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-2 control-label">Description</label>
+                                                        <div class="col-sm-10">
+                                                            <textarea ng-model="job.description" class="form-control" placeholder="Description"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-2 control-label">Start Date</label>
+                                                        <div class="col-sm-4">
+                                                            <input ng-model="job.startdate" type="month" class="form-control">
+                                                        </div>
+                                                        <label class="col-sm-2 control-label">End Date</label>
+                                                        <div class="col-sm-4">
+                                                            <input ng-model="job.enddate" type="month" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="col-sm-2 control-label">Image Path</label>
+                                                        <div class="col-sm-4">
+                                                            <input ng-model="job.photofilepath" type="text" class="form-control">
+                                                        </div>
+                                                        <label class="col-sm-2 control-label">Client Icon</label>
+                                                        <div class="col-sm-4">
+                                                            <input ng-model="job.clientfaviconfilepath" type="text" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="checkbox pull-right text-muted">
+                                                    <label>
+                                                        <input ng-model="job.activejob" id="activejob" type="checkbox">Active Job
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </accordion-group>
+                                </div>
+                            </accordion>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="panel panel-info">
+                            <!-- Default panel contents -->
+                            <div class="panel-heading">Quick Links</div>
+                            <div class="btn-group btn-group-justified">
+                                <a ng-click="openTimesheet()" href="timesheet" class="btn btn-default btn-quick-link">Timesheet</a>
+                                <a ng-click="opentarget('C:\\some_file.xlsx')" href="scheduler" class="btn btn-default btn-quick-link">Scheduler</a>
+                            </div>
+                            <div class="btn-group btn-group-justified">
+                                <a href="http://google.com.au" target="_blank" class="btn btn-default btn-quick-link">Job List</a>
+                                <a href="http://aurion.com.au" target="_blank" class="btn btn-default btn-quick-link">Aurion</a>
+                                <a href="http://gmail.com" target="_blank" class="btn btn-default btn-quick-link">Archive Mail</a>
+                            </div>
+                        </div>
+                        <div class="panel panel-default">
+                            <!-- Default panel contents -->
+                            <div class="panel-heading">Resources</div>
+                            <div class="list-group">
+                                <li ng-repeat="category in categories" class="list-group-item">{{category.name}}
+                                    <ul class="resources-list">
+                                        <li ng-repeat="link in category.links | filter:searchtext" class="{{resourceTypeClass(link.type)}}">
+                                            <div ng-switch="link.type">
+                                                <a ng-switch-when="website" href="{{link.target}}" target="_blank">
+                                                    <span class="glyphicon glyphicon-new-window resources-icon"></span>
+                                                    {{link.name}}
+                                                </a>
+                                                <a ng-switch-when="file" href="#" ng-click="opentarget(link.target)">
+                                                    <span class="website glyphicon glyphicon-folder-open resources-icon"></span>
+                                                    {{link.name}} 
+                                                </a>
+                                                <a ng-switch-default href="{{link.target}}" target="_blank">{{link.name}} no link type
+                                                </a>
+                                            </div>
+
+                                        </li>
+                                    </ul>
+                                </li>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="navbar navbar-default navbar-fixed-bottom">
+            <div class="container">
+
+                <ul class="nav navbar-nav navbar-left">
+                    <li>
+                        <a ng-click="addjob()" href="#">
+                            <span class="glyphicon glyphicon-plus navbarfilter-icon"></span>New
+                        </a>
+                    </li>
+                    <li>
+                        <a ng-click="expandAll(jobs)" ng-hide="PreviousClickWasExpansion" href="#">
+                            <span class="glyphicon glyphicon-expand"></span>Expand All
+                        </a>
+                        <a ng-click="collapseAll(jobs)" ng-show="PreviousClickWasExpansion" href="#">
+                            <span class="glyphicon glyphicon-collapse-down"></span>Collapse All
+                        </a>
+
+                    </li>
+                    <li>
+                        <a ng-click="numberPredicate = orderToggle(numberPredicate)" href="#">
+                            <span class="glyphicon glyphicon-sort-by-order navbarfilter-icon" ng-if="numberPredicate[0]=='+'"></span>
+                            <span class="glyphicon glyphicon-sort-by-order-alt navbarfilter-icon" ng-if="numberPredicate[0]=='-'"></span>Sort by Number
+                        </a>
+                    </li>
+                    <li>
+                        <a ng-click="activeJobPredicate = orderToggle(activeJobPredicate)" href="#">
+                            <span class="glyphicon glyphicon-sort-by-attributes navbarfilter-icon" ng-if="activeJobPredicate[0]=='+'"></span>
+                            <span class="glyphicon glyphicon-sort-by-attributes-alt navbarfilter-icon" ng-if="activeJobPredicate[0]=='-'"></span>
+                            <span class="glyphicon glyphicon-unchecked navbarfilter-icon" ng-if="activeJobPredicate==''"></span>
+                            Sort by Type
+                        </a>
+                    </li>
+                    <li>
+                        <a ng-click="activeJobPredicate=toggleActiveFilter(activeJobPredicate)" href="#">Group Active</a>
+                    </li>
+
+                </ul>
+
+
+
+
+
+            </div>
+        </div>
+    </div>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.js"></script>
+    <script src="js/angular.js"></script>
+    <script src="js/ui-bootstrap.js"></script>
+    <script src="data/jobs.js"></script>
+    <script src="data/resources.js"></script>
+    <script src="js/jobcontroller.js"></script>
+    <script src="js/appconfig.js"></script>
+    <script src="js/ng-tags-input.js"></script>
+</body>
+
+</html>
